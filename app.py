@@ -12,7 +12,6 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import FlaskForm
 from forms import *
-#from models import *
 import config as cfg
 import sys
 
@@ -44,7 +43,7 @@ class Venue(db.Model):
     phone = db.Column(db.String(120), nullable=False)
     website = db.Column(db.String(120), nullable=True)
     genres = db.Column(db.ARRAY(db.String), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
+    image_link = db.Column(db.String(500), nullable=False, default='https://images.unsplash.com/photo-1534294668821-28a3054f4256?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80')
     facebook_link = db.Column(db.String(120), nullable=True)
     shows = db.relationship('Show', backref='venue', lazy=True)
     seeking_talent = db.Column(db.Boolean, nullable=False, default=False)
@@ -125,15 +124,27 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
+  
+  # Case insensistive search
+  search_term = request.form.get('search_term', '')
+
+  venues = Venue.query.filter(Venue.name.ilike('%' + search_term + '%')).all()
+  response = { 
+    "count": len(venues),
+    "data": []
   }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  data = []
+
+  for venue in venues:
+    data.append({
+      "id": venue.id,
+      "name": venue.name,
+      "num_upcoming_shows": len(list(filter(lambda show: show.start_time > datetime.now(), venue.shows)))
+    })
+
+  response['data'] = data
+
+  return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -198,6 +209,7 @@ def create_venue_submission():
     body['phone'] = request.form['phone']
     body['genres'] = request.form.getlist('genres')
     body['facebook_link'] = request.form['facebook_link']
+    body['image_link'] = request.form['image_link']
     body['website'] = request.form['website']
     body['seeking_talent'] = True if 'seeking_talent' in request.form else False
     body['seeking_description'] = request.form['seeking_description']
@@ -213,7 +225,7 @@ def create_venue_submission():
       website= body['website'],
       seeking_talent= body['seeking_talent'],
       seeking_description= body['seeking_description'],
-      image_link='https://images.unsplash.com/photo-1534294668821-28a3054f4256?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80'
+      image_link=body['image_link']
     )
 
     db.session.add(venue)
@@ -264,17 +276,27 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-  # search for "band" should return "The Wild Sax Band".
-  response={
-    "count": 1,
-    "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
+
+  search_term = request.form.get('search_term', '')
+
+  # Case insensistive search
+  artists = Artist.query.filter(Artist.name.ilike('%' + search_term + '%')).all()
+  response = { 
+    "count": len(artists),
+    "data": []
   }
+  data = []
+
+  for artist in artists:
+    data.append({
+      "id": artist.id,
+      "name": artist.name,
+      "num_upcoming_shows": len(list(filter(lambda show: show.start_time > datetime.now(), artist.shows)))
+    })
+
+  response['data'] = data
+
   return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
@@ -350,6 +372,7 @@ def edit_artist_submission(artist_id):
     artist.phone = request.form['phone']
     artist.genres = request.form.getlist('genres')
     artist.facebook_link = request.form['facebook_link']
+    artist.image_link = request.form['image_link']
     artist.website = request.form['website']
     artist.seeking_venue = True if 'seeking_venue' in request.form else False
     artist.seeking_description = request.form['seeking_description']
@@ -397,6 +420,7 @@ def edit_venue_submission(venue_id):
     venue.phone = request.form['phone']
     venue.genres = request.form.getlist('genres')
     venue.facebook_link = request.form['facebook_link']
+    venue.image_link = request.form['image_link']
     venue.website = request.form['website']
     venue.seeking_talent = True if 'seeking_talent' in request.form else False
     venue.seeking_description = request.form['seeking_description']
@@ -430,7 +454,6 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   error = False
   body = {}
-  # TODO allow image link / image upload
   # TODO validate data from form
   try:
     body['name'] = request.form['name'] 
@@ -439,6 +462,7 @@ def create_artist_submission():
     body['phone'] = request.form['phone']
     body['genres'] = request.form.getlist('genres')
     body['facebook_link'] = request.form['facebook_link']
+    body['image_link'] = request.form['image_link']
     body['website'] = request.form['website']
     body['seeking_venue'] = True if 'seeking_venue' in request.form else False
     body['seeking_description'] = request.form['seeking_description']
@@ -453,7 +477,7 @@ def create_artist_submission():
       website= body['website'],
       seeking_venue= True if body['seeking_venue'] == 'y' else False,
       seeking_description= body['seeking_description'],
-      image_link='https://images.unsplash.com/photo-1534294668821-28a3054f4256?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80'
+      image_link=body['image_link']
     )
 
     db.session.add(artist)
@@ -515,7 +539,7 @@ def create_show_submission():
     body['start_time'] = request.form['start_time']
     body['artist_id'] = request.form['artist_id']
     body['venue_id'] = request.form['venue_id']
-    body['image_link'] = 'https://images.unsplash.com/photo-1534294668821-28a3054f4256?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80'
+    body['image_link'] = request.form['image_link']
 
     show = Show(
       start_time = body['start_time'],
