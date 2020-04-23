@@ -107,6 +107,7 @@ def venues():
     For each area, which contains its venues (may be multiple), we add the necessary information about the area and each of its venue to data[], that will be passed to the template.
   '''
   for area in areas:
+    # SELECT * FROM Venue WHERE (state = area.state) AND (city = area.city)
     venues = Venue.query.filter_by(state = area.state).filter_by(city = area.city).all()
     current_venue_data = []
 
@@ -130,6 +131,8 @@ def search_venues():
   # Case insensistive search
   search_term = request.form.get('search_term', '')
 
+
+  # SELECT * FROM Venue WHERE name ILIKE '%search_term%'
   venues = Venue.query.filter(Venue.name.ilike('%' + search_term + '%')).all()
   response = { 
     "count": len(venues),
@@ -152,6 +155,7 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
 
+  # SELECT * FROM Venue WHERE id = venue_id
   venue = Venue.query.get(venue_id)
 
   data = {
@@ -201,8 +205,6 @@ def create_venue_form():
 def create_venue_submission():
   error = False
   body = {}
-  # TODO allow image link / image upload
-  # TODO validate data from form
   try:
     body['name'] = request.form['name'] 
     body['city'] = request.form['city']
@@ -230,6 +232,7 @@ def create_venue_submission():
       image_link=body['image_link']
     )
 
+    # INSERT INTO Venue (....) VALUES (....)
     db.session.add(venue)
     db.session.commit()
   except:
@@ -250,6 +253,7 @@ def delete_venue(venue_id):
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
   try:
+    # DELETE FROM Venue WHERE id = venue_id
     Venue.query.filter_by(id=venue_id).delete()
     db.session.commit()
   except:
@@ -266,6 +270,7 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   data = []
+  # SELECT * FROM Artist
   artists = Artist.query.all()
 
   for artist in artists:
@@ -283,6 +288,7 @@ def search_artists():
   search_term = request.form.get('search_term', '')
 
   # Case insensistive search
+  # SELECT * FROM Artist WHERE name ILIKE '%search_term%'
   artists = Artist.query.filter(Artist.name.ilike('%' + search_term + '%')).all()
   response = { 
     "count": len(artists),
@@ -304,6 +310,8 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   # shows the venue page with the given venue_id
+
+  # SELECT * FROM Artist WHERE (id = artist_id)
   artist = Artist.query.get(artist_id)
 
   data = {
@@ -351,6 +359,7 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   form = ArtistForm()
+  # "SELECT * FROM Artist WHERE (id = artist_id)"
   artist = Artist.query.get_or_404(artist_id)
 
   # Populates the Form with the Artist object data
@@ -366,6 +375,7 @@ def edit_artist_submission(artist_id):
 
   try:
     submitted_form = ArtistForm(request.form)
+    # SELECT * FROM Artist WHERE (id = artist_id)
     artist = Artist.query.get(artist_id)
 
     artist.name = request.form['name'] 
@@ -378,6 +388,8 @@ def edit_artist_submission(artist_id):
     artist.website = request.form['website']
     artist.seeking_venue = True if 'seeking_venue' in request.form else False
     artist.seeking_description = request.form['seeking_description']
+
+    # UPDATE Artist SET (col = val, ....) WHERE (id = artist_id)
     db.session.commit()
 
   except:
@@ -399,6 +411,7 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
+  # SELECT * FROM Venue WHERE (id = venue_id)
   venue = Venue.query.get_or_404(venue_id)
 
   # Populates the Form with the Artist object data
@@ -413,6 +426,7 @@ def edit_venue_submission(venue_id):
   error = False
 
   try:
+    # SELECT * FROM Venue WHERE id = venue_id
     venue = Venue.query.get(venue_id)
 
     venue.name = request.form['name'] 
@@ -426,6 +440,8 @@ def edit_venue_submission(venue_id):
     venue.website = request.form['website']
     venue.seeking_talent = True if 'seeking_talent' in request.form else False
     venue.seeking_description = request.form['seeking_description']
+
+    # UPDATE Venue SET (col = val, ....) WHERE (id = venue_id)
     db.session.commit()
 
   except:
@@ -482,6 +498,7 @@ def create_artist_submission():
       image_link=body['image_link']
     )
 
+    # INSERT INTO Artist (name, city......) VALUES (.........])
     db.session.add(artist)
     db.session.commit()
   except:
@@ -512,6 +529,7 @@ def shows():
 
   data = []
 
+  # SELECT * FROM Show
   shows = Show.query.all()
 
   for show in shows:
@@ -550,6 +568,7 @@ def create_show_submission():
       image_link = body['image_link']
     )
 
+    # INSERT INTO SHow (.....) VALUES (.....)
     db.session.add(show)
     db.session.commit()
   except:
