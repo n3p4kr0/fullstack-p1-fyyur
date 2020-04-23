@@ -329,7 +329,7 @@ def show_artist(artist_id):
     "upcoming_shows_count": 0
   }
 
-  for show in artist.shows:
+  for show in shows:
     if(show.start_time <= datetime.now()):
       data['past_shows'].append({
         "venue_id": show.venue.id,
