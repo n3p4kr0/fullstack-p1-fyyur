@@ -103,7 +103,6 @@ def venues():
   
   for area in areas:
     venues = Venue.query.filter_by(state = area.state).filter_by(city = area.city).all()
-    print(venues)
     current_venue_data = []
 
     for venue in venues:
@@ -118,8 +117,6 @@ def venues():
     "state": area.state,
     "venues": current_venue_data
     })
-
-  print(data)
 
   return render_template('pages/venues.html', areas=data);
 
@@ -177,7 +174,6 @@ def show_venue(venue_id):
       })
       data['upcoming_shows_count'] += 1 
 
-  print(data)
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -200,7 +196,7 @@ def create_venue_submission():
     body['state'] = request.form['state']
     body['address'] = request.form['address']
     body['phone'] = request.form['phone']
-    body['genres'] = request.form['genres']
+    body['genres'] = request.form.getlist('genres')
     body['facebook_link'] = request.form['facebook_link']
     body['website'] = request.form['website']
     body['seeking_talent'] = True if 'seeking_talent' in request.form else False
@@ -320,9 +316,7 @@ def show_artist(artist_id):
       data['upcoming_shows_count'] += 1 
 
 
-  shows = artist.shows
-  print(shows)
-  
+  shows = artist.shows  
 
   return render_template('pages/show_artist.html', artist=data)
  
@@ -354,14 +348,11 @@ def edit_artist_submission(artist_id):
     artist.city = request.form['city']
     artist.state = request.form['state']
     artist.phone = request.form['phone']
-    # TODO: Group all 'genres' from the Request's dictionary into one List
-    #artist.genres = request.form['genres']
-    artist.genres = submitted_form.genres.data
+    artist.genres = request.form.getlist('genres')
     artist.facebook_link = request.form['facebook_link']
     artist.website = request.form['website']
     artist.seeking_venue = True if 'seeking_venue' in request.form else False
     artist.seeking_description = request.form['seeking_description']
-    print(submitted_form.genres.data)
     db.session.commit()
 
   except:
@@ -404,8 +395,7 @@ def edit_venue_submission(venue_id):
     venue.state = request.form['state']
     venue.address = request.form['address']
     venue.phone = request.form['phone']
-    # TODO: Group all 'genres' from the Request's dictionary into one List
-    venue.genres = request.form['genres']
+    venue.genres = request.form.getlist('genres')
     venue.facebook_link = request.form['facebook_link']
     venue.website = request.form['website']
     venue.seeking_talent = True if 'seeking_talent' in request.form else False
@@ -447,7 +437,7 @@ def create_artist_submission():
     body['city'] = request.form['city']
     body['state'] = request.form['state']
     body['phone'] = request.form['phone']
-    body['genres'] = request.form['genres']
+    body['genres'] = request.form.getlist('genres')
     body['facebook_link'] = request.form['facebook_link']
     body['website'] = request.form['website']
     body['seeking_venue'] = True if 'seeking_venue' in request.form else False
@@ -533,8 +523,6 @@ def create_show_submission():
       venue_id=  body['venue_id'],
       image_link = body['image_link']
     )
-
-    print(show)
 
     db.session.add(show)
     db.session.commit()
