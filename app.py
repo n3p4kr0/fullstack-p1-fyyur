@@ -29,7 +29,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db, compare_type=True)
 
 #----------------------------------------------------------------------------#
-# Models (imported from models.py)
+# Models
 #----------------------------------------------------------------------------#
 
 class Venue(db.Model):
@@ -60,7 +60,6 @@ class Artist(db.Model):
     phone = db.Column(db.String(120), nullable=False)
     genres = db.Column(db.ARRAY(db.String), nullable=False)
     website = db.Column(db.String(120), nullable=True)
-    # TODO:: Change the default image
     image_link = db.Column(db.String(500), nullable=False, default='https://images.unsplash.com/photo-1534294668821-28a3054f4256?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80')
     facebook_link = db.Column(db.String(120), nullable=True)
     shows = db.relationship('Show', backref='artist', lazy=True)
@@ -97,9 +96,16 @@ def index():
 
 @app.route('/venues')
 def venues():
+  ''' 
+    We first group the venues by area (state + city)
+  '''
   areas = Venue.query.with_entities(func.count(Venue.id), Venue.city, Venue.state).group_by(Venue.state, Venue.city).all()
   data = []
-  
+
+
+  '''
+    For each area, which contains its venues (may be multiple), we add the necessary information about the area and each of its venue to data[], that will be passed to the template.
+  '''
   for area in areas:
     venues = Venue.query.filter_by(state = area.state).filter_by(city = area.city).all()
     current_venue_data = []
@@ -120,11 +126,7 @@ def venues():
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
-def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  
+def search_venues():  
   # Case insensistive search
   search_term = request.form.get('search_term', '')
 
@@ -264,12 +266,12 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   data = []
-  artists = Artist.query.with_entities(Artist.id, Artist.name).all()
+  artists = Artist.query.all()
 
   for artist in artists:
     data.append({
-      "id": artist[0],
-      "name": artist[1]
+      "id": artist.id,
+      "name": artist.name
     })
     
   return render_template('pages/artists.html', artists=data)
